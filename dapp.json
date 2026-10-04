@@ -1,4 +1,36 @@
 {
   "description": "Monitor real-time gas fees and token unlock risks across multiple blockchains",
-  "secrets": []
+  "secrets": [],
+  "tests": [
+    {
+      "id": "gas-lock.dashboard",
+      "name": "Dashboard renders with gas meter and favorites toggle",
+      "path": "/",
+      "expectText": "Favorites only",
+      "expectSelector": "#gas-grid",
+      "visual": true,
+      "impact": ["public/index.html", "public/app.js", "styles/tailwind-input.css", "tailwind.config.js"]
+    },
+    {
+      "name": "Gas tracker shows all four chains",
+      "path": "/",
+      "expectText": "Ethereum"
+    },
+    {
+      "name": "Weekly fee heatmap renders",
+      "path": "/",
+      "expectSelector": "#heatmap"
+    },
+    {
+      "name": "Cost calculator renders",
+      "path": "/",
+      "expectText": "Cost calculator"
+    },
+    {
+      "name": "Lock tracker shows upcoming unlocks",
+      "path": "/",
+      "expectText": "Celestia",
+      "expectSelector": "#locks-grid"
+    }
+  ]
 }

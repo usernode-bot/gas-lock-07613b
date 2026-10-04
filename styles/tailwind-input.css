@@ -3,73 +3,76 @@
  * Deliberately OUTSIDE public/ so it is never served — the @tailwind lines
  * are build-time directives and mean nothing to a browser. npm run build
  * compiles this to public/tailwind.css with Docker or Paketo.
- *
- * "base" is the preflight layer (the cross-browser reset). Keep all three
- * layers, in this order; dropping base changes every heading, list and form
- * control.
  */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* ── Colour tokens ────────────────────────────────────────────────────────
- * This app's palette, defined once. Each value is "R G B"; tailwind.config.js
- * names them (bg-ground, bg-surface, text-fg, text-muted, border-line,
- * bg-accent with text-on-accent, ...). :root is the light look, and .dark,
- * which the theme script in public/index.html sets on <html>, the dark one.
+ * Gas & Lock has ONE fixed look: a dark Web3 glassmorphism scene (see
+ * CLAUDE.md "## Design"). Both :root and .dark carry the same values so the
+ * platform's theme script can toggle its class without changing anything.
  *
- * Re-theme the app HERE: change the values, keep the names. The defaults
- * (warm greys, one teal accent) are a quiet starting point, not a look.
- * Keep every text pair at 4.5:1 or more in both looks: fg and muted on
- * ground, surface and raised; accent and danger on ground and surface;
- * on-accent on accent; on-danger on danger.
- *
- * Adopting the native UI kit later? Point its --un-accent and
- * --un-accent-contrast at the accent and on-accent tokens.
+ * Palette: deep navy ground, glass navy surfaces, near-white blue-tinted
+ * text; one neon-green accent (the primary action and "low/calm" state),
+ * cyan as the secondary highlight (live numbers, focus), and a
+ * green/amber/red status trio for fee and risk levels. Status colors always
+ * travel with a text label (Low / Medium / High), never color alone.
  */
 @layer base {
   :root {
-    --ground: 250 250 249;    /* the page */
-    --surface: 255 255 255;   /* lists, cards, fields */
-    --raised: 245 245 244;    /* hovers, badges */
-    --fg: 28 25 23;           /* text */
-    --muted: 87 83 78;        /* secondary text */
-    --line: 231 229 228;      /* borders, dividers, skeletons */
-    --accent: 15 118 110;     /* the one accent */
-    --on-accent: 255 255 255; /* text on the accent */
-    --danger: 185 28 28;
-    --on-danger: 255 255 255;
-    --focus: 13 148 136;      /* the keyboard focus ring */
+    --ground: 9 12 22;        /* the page: deep space navy */
+    --surface: 16 22 36;      /* glass card base (used at /60–/80 alpha) */
+    --raised: 27 34 52;       /* hovers, badges, meter tracks */
+    --fg: 233 240 250;        /* text */
+    --muted: 150 162 186;     /* secondary text */
+    --line: 47 57 82;         /* borders, dividers */
+    --accent: 47 226 152;     /* neon green: primary action, low/calm */
+    --on-accent: 6 26 18;     /* text on the accent */
+    --cyan: 66 216 240;       /* secondary highlight: live values, focus */
+    --pos: 61 214 138;        /* status: low / calm */
+    --warn: 251 196 60;       /* status: medium */
+    --risk: 255 113 99;       /* status: high pressure */
+    --danger: 255 113 99;
+    --on-danger: 42 10 6;
+    --focus: 66 216 240;      /* the keyboard focus ring */
   }
   .dark {
-    --ground: 12 10 9;
-    --surface: 28 25 23;
-    --raised: 41 37 36;
-    --fg: 245 245 244;
-    --muted: 168 162 158;
-    --line: 68 64 60;
-    --accent: 45 212 191;
-    --on-accent: 4 47 46;
-    --danger: 248 113 113;
-    --on-danger: 69 10 10;
-    --focus: 94 234 212;
+    --ground: 9 12 22;
+    --surface: 16 22 36;
+    --raised: 27 34 52;
+    --fg: 233 240 250;
+    --muted: 150 162 186;
+    --line: 47 57 82;
+    --accent: 47 226 152;
+    --on-accent: 6 26 18;
+    --cyan: 66 216 240;
+    --pos: 61 214 138;
+    --warn: 251 196 60;
+    --risk: 255 113 99;
+    --danger: 255 113 99;
+    --on-danger: 42 10 6;
+    --focus: 66 216 240;
   }
   /* el.hidden = true hides an element even when a class gives it a display
      (flex, the components below). */
   [hidden]:where(:not([hidden="until-found"])) {
     display: none !important;
   }
+  /* The glassmorphism scene: two faint neon glows over the navy ground. */
+  body {
+    background-color: rgb(var(--ground));
+    background-image:
+      radial-gradient(55rem 38rem at 88% -8%, rgb(var(--cyan) / 0.09), transparent 60%),
+      radial-gradient(48rem 34rem at -6% 24%, rgb(var(--accent) / 0.08), transparent 62%),
+      radial-gradient(40rem 30rem at 50% 110%, rgb(var(--risk) / 0.05), transparent 65%);
+    background-attachment: fixed;
+  }
 }
 
-/* ── Components ───────────────────────────────────────────────────────────
- * A small starting kit on the tokens. Use these rather than restyling the
- * same thing by hand, add to them sparingly, and change a component here
- * rather than one copy of it. Type: text-title, text-heading, text-body and
- * text-small (tailwind.config.js), nothing in between.
- */
+/* ── Components ─────────────────────────────────────────────────────────── */
 @layer components {
-  /* Buttons: one primary per screen, the rest secondary. At least 44 px
-     each way, so they are easy to tap. */
+  /* Buttons: one primary per screen, the rest secondary. At least 44 px. */
   .btn-primary,
   .btn-secondary {
     @apply inline-flex min-h-11 min-w-11 items-center justify-center gap-2 rounded-lg px-4 text-body font-medium
@@ -83,44 +86,95 @@
     @apply border border-line bg-surface text-fg hover:bg-raised;
   }
 
-  /* Text inputs, selects and textareas: <input class="field">, 44 px tall. */
+  /* Text inputs and selects: <input class="field">, 44 px tall. */
   .field {
-    @apply block min-h-11 w-full rounded-lg border border-line bg-surface px-3 py-2 text-body text-fg
+    @apply block min-h-11 w-full rounded-lg border border-line bg-raised px-3 py-2 text-body text-fg
       placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-focus;
   }
 
-  /* A grouped list: <ul class="list"> of <li class="list-row">. The usual
-     way to show several things; prefer it to a stack of cards. */
-  .list {
-    @apply divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface;
-  }
-  .list-row {
-    @apply flex min-h-11 items-center gap-3 px-4 py-3;
+  /* Glass card: the app's one container. Never a card inside a card. */
+  .glass {
+    @apply rounded-2xl border border-line bg-surface/70 shadow-lg shadow-black/30 backdrop-blur-md;
   }
 
-  /* A card: one self-contained thing, usually something you tap. Most
-     screens need none. Never put a card inside a card or a .list. */
-  .card {
-    @apply rounded-xl border border-line bg-surface p-4;
+  /* Filter chip: single-select, aria-pressed carries the state. */
+  .chip {
+    @apply inline-flex min-h-9 items-center rounded-full border border-line bg-transparent px-3 text-small font-medium text-muted
+      hover:bg-raised hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus;
+  }
+  .chip[aria-pressed="true"] {
+    @apply border-accent/60 bg-accent/10 text-accent;
   }
 
-  /* The label above a section: sentence case, never uppercase or tracked. */
+  /* Favorites switch: a button carrying role="switch" + aria-pressed. */
+  .switch {
+    @apply relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border border-line bg-raised
+      transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2
+      focus-visible:ring-offset-ground;
+  }
+  .switch[aria-pressed="true"] {
+    @apply border-accent bg-accent;
+  }
+  .switch .knob {
+    @apply absolute left-1 h-4 w-4 rounded-full bg-muted transition-transform;
+  }
+  .switch[aria-pressed="true"] .knob {
+    @apply translate-x-5 bg-on-accent;
+  }
+
+  /* Star (bookmark) button on chain and token cards. */
+  .star-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-full text-muted
+      hover:bg-raised hover:text-fg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus;
+  }
+  .star-btn.starred {
+    @apply text-accent;
+  }
+  .star-btn.starred:hover {
+    @apply text-accent;
+  }
+
+  /* Status pills: always paired with their word (Low / Medium / High). */
+  .pill {
+    @apply inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-small font-medium;
+  }
+
+  /* Supply meter: track + fill (fill width set inline). */
+  .meter {
+    @apply h-2 w-full overflow-hidden rounded-full bg-raised;
+  }
+  .meter > span {
+    @apply block h-full rounded-full bg-accent;
+  }
+
+  /* Heatmap cell: 3-level status scale, one per fee level. */
+  .hm-cell {
+    @apply aspect-square rounded-[3px] ring-focus;
+  }
+  .hm-lo { background: rgb(var(--pos) / 0.55); }
+  .hm-md { background: rgb(var(--warn) / 0.55); }
+  .hm-hi { background: rgb(var(--risk) / 0.5); }
+  .hm-cell:hover {
+    outline: 2px solid rgb(var(--focus));
+    outline-offset: 1px;
+  }
+
+  /* The live badge's pulsing dot (skipped under reduced motion). */
+  .live-dot {
+    @apply h-1.5 w-1.5 rounded-full bg-current motion-safe:animate-pulse;
+  }
+
+  /* The label above a section: sentence case. */
   .section-label {
     @apply mb-2 px-1 text-small font-medium text-muted;
   }
 
-  /* The states of anything that loads data. Show exactly one at a time:
-     - loading: .skeleton shapes where the data will be, never a blank;
-     - empty, only when the load WORKED and found nothing: a title, one
-       sentence and the action that fills it;
-     - error, only when the load FAILED: what failed, what still works,
-       and a Retry button.
-     Never show the empty state while loading or for a failure. */
+  /* Loading / empty / error states of anything that loads data. */
   .skeleton {
     @apply rounded-md bg-line motion-safe:animate-pulse;
   }
   .state-empty,
   .state-error {
-    @apply flex flex-col items-center gap-2 px-4 py-8 text-center;
+    @apply flex flex-col items-center gap-2 rounded-2xl border border-dashed border-line px-4 py-8 text-center;
   }
 }
