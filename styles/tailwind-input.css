@@ -21,8 +21,8 @@
  * Re-theme the app HERE: change the values, keep the names. The defaults
  * (warm greys, one teal accent) are a quiet starting point, not a look.
  * Keep every text pair at 4.5:1 or more in both looks: fg and muted on
- * ground, surface and raised; accent and danger on ground and surface;
- * on-accent on accent; on-danger on danger.
+ * ground, surface and raised; accent, warn and danger on ground and
+ * surface; on-accent on accent; on-danger on danger.
  *
  * Adopting the native UI kit later? Point its --un-accent and
  * --un-accent-contrast at the accent and on-accent tokens.
@@ -37,6 +37,7 @@
     --line: 231 229 228;      /* borders, dividers, skeletons */
     --accent: 15 118 110;     /* the one accent */
     --on-accent: 255 255 255; /* text on the accent */
+    --warn: 146 64 14;        /* the medium status, between accent and danger */
     --danger: 185 28 28;
     --on-danger: 255 255 255;
     --focus: 13 148 136;      /* the keyboard focus ring */
@@ -50,6 +51,7 @@
     --line: 68 64 60;
     --accent: 45 212 191;
     --on-accent: 4 47 46;
+    --warn: 251 191 36;
     --danger: 248 113 113;
     --on-danger: 69 10 10;
     --focus: 94 234 212;
@@ -102,6 +104,13 @@
      screens need none. Never put a card inside a card or a .list. */
   .card {
     @apply rounded-xl border border-line bg-surface p-4;
+  }
+
+  /* The glass surface: the same card, slightly translucent over the page
+     background with a blur behind it. Works because the config's
+     <alpha-value> keeps opacity modifiers on the tokens. */
+  .glass-card {
+    @apply rounded-xl border border-line bg-surface/70 p-4 backdrop-blur-sm;
   }
 
   /* The label above a section: sentence case, never uppercase or tracked. */

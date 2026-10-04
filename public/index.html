@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
+
   <script>
   // usernode-dev-console@1
   (function () {
@@ -26,8 +26,8 @@
             if (seen.has(val)) return '[Circular]';
             seen.add(val);
           }
-          if (typeof val === 'function') return '[Function ' + (val.name || 'anonymous') + ']';
-          if (val instanceof Error) return val.stack || (val.name + ': ' + val.message);
+          if (typeof val === 'function') return '[Function ' + (v.name || 'anonymous') + ']';
+          if (val instanceof Error) return val.stack || val.name + ': ' + val.message;
           return val;
         });
       } catch (e) { try { return String(v); } catch (_) { return '[unserializable]'; } }
@@ -108,156 +108,554 @@
   </script>
 </head>
 <body class="min-h-screen bg-ground text-fg">
-  <!-- Built from the design kit in styles/tailwind-input.css: colour tokens
-       (bg-ground, text-muted, bg-accent, ...) that are right in both looks,
-       and components (btn-primary, list, card, state-empty, ...). The real
-       app keeps the kit; CLAUDE.md's "## Design" says how. -->
-  <main class="mx-auto flex max-w-md flex-col gap-8 px-4 py-10">
+  <main class="mx-auto flex max-w-3xl flex-col gap-10 px-4 py-10">
 
-    <!-- usernode-starter-notice@1 — starter-template messaging. When building
-         the user's real app, replace this whole screen and delete this block,
-         both sentinel comments included. -->
-    <section class="card flex flex-col items-start gap-3">
-      <span class="rounded-full bg-raised px-3 py-1 text-small font-medium text-muted">Starter template</span>
-      <h1 class="text-title">Gas &amp; Lock</h1>
-      <p class="text-body text-muted">Welcome to your new app! Everything on this screen is placeholder content that came with it.</p>
-      <p class="text-body text-muted">Tap the <strong class="font-semibold text-fg">Homeroom icon</strong> in the header and choose <strong class="font-semibold text-fg">Start a new change</strong> to start building your app. Describe what you'd like in plain English, and it will be turned into your real app.</p>
-    </section>
+    <header class="flex flex-col gap-4">
+      <div class="flex items-center justify-between gap-3 px-1">
+        <h1 class="text-title">Gas &amp; Lock</h1>
+        <span class="rounded-full bg-raised px-3 py-1 text-small font-medium text-muted">Demo data</span>
+      </div>
+      <label class="flex items-center gap-3 px-1">
+        <input id="starred-only" type="checkbox" class="h-5 w-5 accent-accent">
+        <span class="text-body">Starred only</span>
+      </label>
+    </header>
 
+    <!-- Gas fees: chain cards, the weekly heatmap and the cost calculator.
+         All three come from one fetch, so the section shows exactly one of
+         these states at a time: loading, the data, empty (loaded, and the
+         starred filter leaves nothing) or error (the load failed). -->
     <section>
-      <h2 class="section-label">What's already working</h2>
-      <ul class="list">
-        <li class="list-row items-start">
-          <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-body font-medium">Sign-in</p>
-            <p class="text-small text-muted">You're signed in through Homeroom automatically, with no accounts to build.</p>
-          </div>
-        </li>
-        <li class="list-row items-start">
-          <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-body font-medium">Database</p>
-            <p class="text-small text-muted">Your app has its own private database, ready to store things.</p>
-          </div>
-        </li>
-        <li class="list-row items-start">
-          <svg class="mt-0.5 h-5 w-5 shrink-0 text-accent" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M16.7 5.3a1 1 0 0 1 0 1.4l-7 7a1 1 0 0 1-1.4 0l-3-3a1 1 0 1 1 1.4-1.4L9 11.6l6.3-6.3a1 1 0 0 1 1.4 0Z" clip-rule="evenodd"/></svg>
-          <div>
-            <p class="text-body font-medium">Live API</p>
-            <p class="text-small text-muted">The example below talks to a real server. Try it.</p>
-          </div>
-        </li>
-      </ul>
-    </section>
-    <!-- /usernode-starter-notice@1 -->
+      <h2 class="section-label">Gas fees</h2>
 
-    <section class="flex flex-col items-center gap-5">
-      <div class="w-full px-1">
-        <h2 class="text-heading">Try the example</h2>
-        <p class="text-small text-muted">This example will be replaced</p>
+      <div id="gas-loading" role="status" class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <span class="sr-only">Loading gas fees</span>
+        <div class="card flex flex-col gap-3"><div class="skeleton h-4 w-1/3"></div><div class="skeleton h-8 w-1/2"></div><div class="skeleton h-2 w-full"></div><div class="skeleton h-4 w-2/5"></div></div>
+        <div class="card flex flex-col gap-3"><div class="skeleton h-4 w-1/3"></div><div class="skeleton h-8 w-1/2"></div><div class="skeleton h-2 w-full"></div><div class="skeleton h-4 w-2/5"></div></div>
+        <div class="card flex flex-col gap-3"><div class="skeleton h-4 w-1/3"></div><div class="skeleton h-8 w-1/2"></div><div class="skeleton h-2 w-full"></div><div class="skeleton h-4 w-2/5"></div></div>
+        <div class="card flex flex-col gap-3"><div class="skeleton h-4 w-1/3"></div><div class="skeleton h-8 w-1/2"></div><div class="skeleton h-2 w-full"></div><div class="skeleton h-4 w-2/5"></div></div>
       </div>
 
-      <button id="press-btn" class="btn-primary h-32 w-32 rounded-full text-title active:scale-95">Press!</button>
+      <div id="gas-error" class="state-error" hidden>
+        <svg class="h-6 w-6 text-danger" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V6a1 1 0 0 1 1-1Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+        <p class="text-heading">Couldn't load gas fees</p>
+        <p class="text-body text-muted">Token unlocks load on their own and still work.</p>
+        <button id="gas-retry" class="btn-secondary">Retry</button>
+      </div>
 
-      <p id="count" class="min-h-6 text-body text-muted"></p>
+      <div id="gas-empty" class="state-empty" hidden>
+        <p class="text-heading">Nothing starred yet</p>
+        <p class="text-body text-muted">Star a chain to focus the gas view, then turn on Starred only.</p>
+      </div>
 
-      <div class="w-full">
-        <h3 class="section-label">Leaderboard</h3>
-        <!-- Anything that loads data shows exactly one of these at a time:
-             loading, the data, empty (it loaded, and there is nothing yet)
-             or error (it did not load). The script below switches them. -->
-        <div id="leaderboard-loading" role="status">
-          <span class="sr-only">Loading the leaderboard</span>
-          <div class="list">
-            <div class="list-row"><div class="skeleton h-4 w-1/2"></div></div>
-            <div class="list-row"><div class="skeleton h-4 w-1/3"></div></div>
-            <div class="list-row"><div class="skeleton h-4 w-2/5"></div></div>
+      <div id="gas-content" class="flex flex-col gap-6" hidden>
+        <div id="gas-grid" class="grid grid-cols-1 gap-4 sm:grid-cols-2"></div>
+
+        <div class="flex flex-col gap-2">
+          <h3 class="section-label">Weekly low-fee heatmap</h3>
+          <div id="heatmap" class="glass-card overflow-x-auto">
+            <div id="heatmap-inner" class="flex w-max min-w-full flex-col gap-2"></div>
+          </div>
+          <div class="flex flex-wrap items-center gap-4 px-1 text-small text-muted">
+            <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm bg-accent/40"></span>Low</span>
+            <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm bg-warn/40"></span>Medium</span>
+            <span class="flex items-center gap-1.5"><span class="h-3 w-3 rounded-sm bg-danger/40"></span>High</span>
           </div>
         </div>
-        <ol id="leaderboard" class="list" hidden></ol>
-        <div id="leaderboard-empty" class="state-empty" hidden>
-          <p class="text-heading">No presses yet</p>
-          <p class="text-body text-muted">Press the button to put your name on the board.</p>
-          <button id="leaderboard-press" class="btn-secondary">Press it</button>
-        </div>
-        <div id="leaderboard-error" class="state-error" hidden>
-          <svg class="h-6 w-6 text-danger" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V6a1 1 0 0 1 1-1Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
-          <p class="text-heading">Couldn't load the leaderboard</p>
-          <p class="text-body text-muted">Pressing still works, and every press is saved.</p>
-          <button id="leaderboard-retry" class="btn-secondary">Retry</button>
+
+        <div class="flex flex-col gap-2">
+          <h3 class="section-label">Cost calculator</h3>
+          <div class="glass-card flex flex-col gap-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <label for="calc-chain" class="text-small text-muted">Chain</label>
+                <select id="calc-chain" class="field mt-1"></select>
+              </div>
+              <div id="calc-units-wrap">
+                <label for="calc-units" class="text-small text-muted">Gas units</label>
+                <input id="calc-units" type="number" min="0" step="1" value="21000" class="field mt-1 tabular-nums">
+              </div>
+            </div>
+            <div id="calc-presets" class="flex flex-wrap gap-2">
+              <button type="button" data-preset="21000" class="btn-secondary">Transfer</button>
+              <button type="button" data-preset="65000" class="btn-secondary">Approve</button>
+              <button type="button" data-preset="180000" class="btn-secondary">Swap</button>
+            </div>
+            <div class="rounded-lg bg-raised px-4 py-3">
+              <p id="calc-desc" class="text-small text-muted"></p>
+              <p id="calc-cost" class="text-title tabular-nums"></p>
+            </div>
+          </div>
         </div>
       </div>
     </section>
 
-    <p class="text-center text-small text-muted">Built on Homeroom. This template screen disappears once you build your real app.</p>
+    <!-- Token unlocks: countdown timers, supply bars and risk ratings. One
+         fetch, so the same four states, one at a time. -->
+    <section>
+      <h2 class="section-label">Token unlocks</h2>
+
+      <div id="unlocks-loading" role="status">
+        <span class="sr-only">Loading token unlocks</span>
+        <div class="list">
+          <div class="list-row"><div class="skeleton h-4 w-1/3"></div></div>
+          <div class="list-row"><div class="skeleton h-4 w-1/2"></div></div>
+          <div class="list-row"><div class="skeleton h-4 w-2/5"></div></div>
+        </div>
+      </div>
+
+      <div id="unlocks-error" class="state-error" hidden>
+        <svg class="h-6 w-6 text-danger" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M18 10a8 8 0 1 1-16 0 8 8 0 0 1 16 0Zm-8-5a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0V6a1 1 0 0 1 1-1Zm0 10a1 1 0 1 0 0-2 1 1 0 0 0 0 2Z" clip-rule="evenodd"/></svg>
+        <p class="text-heading">Couldn't load token unlocks</p>
+        <p class="text-body text-muted">Gas fees load on their own and still work.</p>
+        <button id="unlocks-retry" class="btn-secondary">Retry</button>
+      </div>
+
+      <div id="unlocks-empty" class="state-empty" hidden>
+        <p class="text-heading">Nothing starred yet</p>
+        <p class="text-body text-muted">Star a token to focus the unlock list.</p>
+      </div>
+
+      <ul id="unlocks-list" class="list bg-surface/70 backdrop-blur-sm" hidden></ul>
+    </section>
   </main>
 
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token') || '';
-    const headers = token ? { 'x-usernode-token': token } : {};
-    const count = document.getElementById('count');
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token') || '';
+      const headers = token ? { 'x-usernode-token': token } : {};
 
-    // The leaderboard's states, one shown at a time. Empty only when the
-    // load worked and found nothing; a failure is the error state, never
-    // "No presses yet".
-    const views = {
-      loading: document.getElementById('leaderboard-loading'),
-      list: document.getElementById('leaderboard'),
-      empty: document.getElementById('leaderboard-empty'),
-      error: document.getElementById('leaderboard-error'),
-    };
-    function show(state) {
-      for (const [name, el] of Object.entries(views)) el.hidden = name !== state;
-    }
+      // ── Favorites: localStorage only, no server state ──────────────────
+      // Corrupt or missing values mean "no stars / filter off"; stored ids
+      // that no longer match any chain or token are simply never matched.
+      const STAR_KEY = 'gaslock:starred';
+      const FILTER_KEY = 'gaslock:starredOnly';
 
-    async function loadLeaderboard() {
-      let leaderboard;
-      try {
-        const res = await fetch('/api/leaderboard', { headers });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        ({ leaderboard } = await res.json());
-      } catch {
-        show('error');
-        return;
+      function loadStarred() {
+        try {
+          const v = JSON.parse(localStorage.getItem(STAR_KEY));
+          return new Set(Array.isArray(v) ? v.filter((x) => typeof x === 'string') : []);
+        } catch { return new Set(); }
       }
-      // People's names go in as text, never as HTML.
-      views.list.replaceChildren(...leaderboard.map((r, i) => {
-        const row = document.createElement('li');
-        row.className = 'list-row justify-between';
-        const name = document.createElement('span');
-        name.textContent = (i + 1) + '. ' + r.username;
-        const presses = document.createElement('span');
-        presses.className = 'tabular-nums text-muted';
-        presses.textContent = r.presses;
-        row.append(name, presses);
-        return row;
-      }));
-      const total = leaderboard.reduce((s, r) => s + parseInt(r.presses, 10), 0);
-      count.textContent = total + (total === 1 ? ' press so far' : ' presses so far');
-      show(leaderboard.length ? 'list' : 'empty');
-    }
+      function loadFilter() {
+        try { return JSON.parse(localStorage.getItem(FILTER_KEY)) === true; }
+        catch { return false; }
+      }
+      let starred = loadStarred();
+      let starredOnly = loadFilter();
+      function saveFavorites() {
+        try {
+          localStorage.setItem(STAR_KEY, JSON.stringify([...starred]));
+          localStorage.setItem(FILTER_KEY, JSON.stringify(starredOnly));
+        } catch {}
+      }
 
-    async function press() {
-      try {
-        const res = await fetch('/api/press', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', ...headers },
-        });
-        if (res.ok) loadLeaderboard();
-        else if (res.status === 401) count.textContent = 'Sign in to press!';
-      } catch {}
-    }
+      // ── State ───────────────────────────────────────────────────────────
+      let gasData = null; // array of chain objects from /api/gas
+      let unlockData = null; // array of unlock objects from /api/unlocks
+      let calc = { chainId: null, units: 21000 }; // calculator selection
 
-    document.getElementById('press-btn').addEventListener('click', press);
-    document.getElementById('leaderboard-press').addEventListener('click', press);
-    document.getElementById('leaderboard-retry').addEventListener('click', () => {
-      show('loading');
-      loadLeaderboard();
-    });
+      const $ = (id) => document.getElementById(id);
 
-    loadLeaderboard();
+      const gasStates = {
+        loading: $('gas-loading'),
+        content: $('gas-content'),
+        empty: $('gas-empty'),
+        error: $('gas-error'),
+      };
+      const unlockStates = {
+        loading: $('unlocks-loading'),
+        list: $('unlocks-list'),
+        empty: $('unlocks-empty'),
+        error: $('unlocks-error'),
+      };
+      function show(states, name) {
+        for (const [key, el] of Object.entries(states)) el.hidden = key !== name;
+      }
+
+      // Status classes, written as whole literals so the Tailwind extractor
+      // sees them. Low/Medium/High map to accent/warn/danger.
+      const PILL = {
+        low: 'bg-accent/10 text-accent',
+        medium: 'bg-warn/15 text-warn',
+        high: 'bg-danger/10 text-danger',
+      };
+      const BAR = { low: 'bg-accent', medium: 'bg-warn', high: 'bg-danger' };
+      const CELL = { low: 'bg-accent/10', medium: 'bg-warn/15', high: 'bg-danger/10' };
+      const STATUS_TEXT = { low: 'Low', medium: 'Medium', high: 'High' };
+
+      // ── Formatting helpers ──────────────────────────────────────────────
+      function fmtFee(v) {
+        if (v >= 100) return v.toFixed(0);
+        if (v >= 10) return v.toFixed(1);
+        if (v >= 1) return v.toFixed(2);
+        if (v >= 0.001) return v.toFixed(3);
+        return v.toFixed(7);
+      }
+      function fmtUsd(v) {
+        if (v >= 1) return '$' + v.toLocaleString('en-US', { maximumFractionDigits: 2 });
+        if (v >= 0.01) return '$' + v.toFixed(3);
+        return '$' + v.toFixed(4);
+      }
+      function fmtAmount(v) {
+        if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+        if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+        if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K';
+        return String(v);
+      }
+      const pad = (n) => String(n).padStart(2, '0');
+      function fmtCountdown(ms) {
+        const s = Math.max(0, Math.floor(ms / 1000));
+        const d = Math.floor(s / 86400);
+        const rest = s % 86400;
+        const clock = pad(Math.floor(rest / 3600)) + ':' + pad(Math.floor((rest % 3600) / 60)) + ':' + pad(rest % 60);
+        return d > 0 ? d + 'd ' + clock : clock;
+      }
+
+      // ── Stars ───────────────────────────────────────────────────────────
+      // Static markup, no data interpolated — safe to build once as strings.
+      const STAR_ON = '<svg class="star-on h-5 w-5 text-accent" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 0 0 .95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 0 0-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 0 0-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 0 0-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 0 0 .951-.69l1.07-3.292Z"/></svg>';
+      const STAR_OFF = '<svg class="star-off h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.332.992l-4.225 3.603a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.563.563 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.225-3.603a.563.563 0 0 1 .332-.992l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z"/></svg>';
+
+      function starButton(id, label) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.star = id;
+        btn.dataset.starLabel = label;
+        btn.className = 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-raised focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus';
+        btn.innerHTML = STAR_ON + STAR_OFF; // static constants
+        syncStarButton(btn);
+        return btn;
+      }
+      function syncStarButton(btn) {
+        const on = starred.has(btn.dataset.star);
+        btn.setAttribute('aria-pressed', String(on));
+        btn.setAttribute('aria-label', (on ? 'Unstar ' : 'Star ') + btn.dataset.starLabel);
+        // Attribute, not the `hidden` property: SVG elements have no
+        // `hidden` IDL attribute, so assigning it there does nothing.
+        const onIcon = btn.querySelector('.star-on');
+        const offIcon = btn.querySelector('.star-off');
+        if (on) { onIcon.removeAttribute('hidden'); offIcon.setAttribute('hidden', ''); }
+        else { onIcon.setAttribute('hidden', ''); offIcon.removeAttribute('hidden'); }
+      }
+      function syncStarButtons(id) {
+        for (const btn of document.querySelectorAll('[data-star="' + CSS.escape(id) + '"]')) syncStarButton(btn);
+      }
+
+      document.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-star]');
+        if (!btn) return;
+        const id = btn.dataset.star;
+        if (starred.has(id)) starred.delete(id);
+        else starred.add(id);
+        saveFavorites();
+        syncStarButtons(id);
+        if (starredOnly) { renderGas(); renderUnlocks(); }
+      });
+
+      function statusPill(status) {
+        const pill = document.createElement('span');
+        pill.className = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-small font-medium ' + PILL[status];
+        pill.textContent = STATUS_TEXT[status];
+        return pill;
+      }
+      function meter(percent, status) {
+        const track = document.createElement('div');
+        track.className = 'h-2 rounded-full bg-line';
+        const fill = document.createElement('div');
+        fill.className = 'h-2 rounded-full ' + BAR[status];
+        fill.style.width = Math.max(2, Math.min(100, percent)) + '%';
+        track.append(fill);
+        return track;
+      }
+
+      // ── Gas section ─────────────────────────────────────────────────────
+      function filteredChains() {
+        return starredOnly ? gasData.filter((c) => starred.has(c.id)) : gasData;
+      }
+
+      function renderGas() {
+        if (!gasData) return;
+        const chains = filteredChains();
+        if (starredOnly && chains.length === 0) {
+          show(gasStates, 'empty');
+          return;
+        }
+        show(gasStates, 'content');
+        renderChainCards(chains);
+        renderHeatmap(chains);
+        syncCalculator(chains);
+      }
+
+      function renderChainCards(chains) {
+        const grid = $('gas-grid');
+        grid.replaceChildren(...chains.map((chain) => {
+          const card = document.createElement('article');
+          card.className = 'glass-card flex flex-col gap-3';
+
+          const top = document.createElement('div');
+          top.className = 'flex items-start justify-between gap-2';
+          const nameWrap = document.createElement('div');
+          const name = document.createElement('p');
+          name.className = 'text-body font-medium';
+          name.textContent = chain.name;
+          const sub = document.createElement('p');
+          sub.className = 'text-small text-muted';
+          sub.textContent = chain.symbol + ' = ' + fmtUsd(chain.nativeUsd);
+          nameWrap.append(name, sub);
+          top.append(nameWrap, starButton(chain.id, chain.name));
+
+          const fee = document.createElement('p');
+          fee.className = 'text-title tabular-nums';
+          fee.textContent = fmtFee(chain.price);
+          const unit = document.createElement('span');
+          unit.className = 'text-body font-normal text-muted';
+          unit.textContent = ' ' + chain.unit;
+          fee.append(unit);
+
+          const footer = document.createElement('p');
+          footer.className = 'text-small text-muted';
+          const cost = document.createElement('span');
+          cost.className = 'tabular-nums text-fg';
+          cost.textContent = fmtUsd(chain.transferUsd);
+          footer.append('Standard transfer ', cost, ' USD');
+
+          card.append(top, fee, statusPill(chain.status),
+            meter((chain.price / chain.thresholds.high) * 100, chain.status),
+            footer);
+          return card;
+        }));
+      }
+
+      function renderHeatmap(chains) {
+        const wrap = $('heatmap-inner');
+        wrap.replaceChildren();
+
+        // Header row: weekday letters above each day column. Cells are fixed
+        // width so the seven columns align across rows, and the card scrolls
+        // sideways where they don't fit (tiny Solana fees need wide cells).
+        const head = document.createElement('div');
+        head.className = 'flex items-center gap-2';
+        const headLabel = document.createElement('span');
+        headLabel.className = 'w-20 shrink-0';
+        head.append(headLabel);
+        const weekday = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+        for (const entry of chains[0].history) {
+          const day = document.createElement('span');
+          day.className = 'w-14 shrink-0 text-center text-small text-muted';
+          day.textContent = weekday[new Date(entry.date + 'T00:00:00Z').getUTCDay()];
+          head.append(day);
+        }
+        wrap.append(head);
+
+        for (const chain of chains) {
+          const row = document.createElement('div');
+          row.className = 'flex items-center gap-2';
+          const label = document.createElement('span');
+          label.className = 'w-20 shrink-0 truncate text-small text-muted';
+          label.textContent = chain.name;
+          row.append(label);
+          for (const entry of chain.history) {
+            const cell = document.createElement('div');
+            cell.className = 'flex h-9 w-14 shrink-0 items-center justify-center rounded-md text-small tabular-nums text-fg ' + CELL[entry.status];
+            cell.title = chain.name + ' · ' + entry.date + ' · ' + fmtFee(entry.low) + ' ' + chain.unit + ' · ' + STATUS_TEXT[entry.status];
+            cell.textContent = fmtFee(entry.low);
+            row.append(cell);
+          }
+          wrap.append(row);
+        }
+      }
+
+      // ── Cost calculator ─────────────────────────────────────────────────
+      const PRESET_NAMES = { 21000: 'Transfer', 65000: 'Approve', 180000: 'Swap' };
+
+      function syncCalculator(chains) {
+        const select = $('calc-chain');
+        const ids = chains.map((c) => c.id).join(',');
+        // Rebuild the options only when the visible set actually changes, so
+        // the 30-second refresh never steals the select mid-interaction.
+        if (select.dataset.ids !== ids) {
+          select.dataset.ids = ids;
+          select.replaceChildren(...chains.map((chain) => {
+            const opt = document.createElement('option');
+            opt.value = chain.id;
+            opt.textContent = chain.name;
+            return opt;
+          }));
+          if (!chains.some((c) => c.id === calc.chainId)) calc.chainId = chains[0].id;
+          select.value = calc.chainId;
+        }
+        updateCalculator();
+      }
+
+      function updateCalculator() {
+        const chain = gasData.find((c) => c.id === calc.chainId);
+        if (!chain) return;
+        const flat = chain.unit === 'SOL';
+        $('calc-units-wrap').hidden = flat;
+        $('calc-presets').hidden = flat;
+
+        const desc = $('calc-desc');
+        const cost = $('calc-cost');
+        if (flat) {
+          desc.textContent = 'Flat fee on ' + chain.name;
+          cost.textContent = fmtUsd(chain.transferUsd);
+          return;
+        }
+        const units = Math.max(0, calc.units || 0);
+        const preset = PRESET_NAMES[units];
+        desc.textContent = (preset ? preset : units + ' gas units') + ' on ' + chain.name;
+        cost.textContent = fmtUsd((chain.price * units * chain.nativeUsd) / 1e9);
+
+        for (const btn of $('calc-presets').querySelectorAll('[data-preset]')) {
+          const active = Number(btn.dataset.preset) === units;
+          btn.classList.toggle('ring-2', active);
+          btn.classList.toggle('ring-accent', active);
+        }
+      }
+
+      $('calc-chain').addEventListener('change', (e) => {
+        calc.chainId = e.target.value;
+        updateCalculator();
+      });
+      $('calc-units').addEventListener('input', (e) => {
+        calc.units = Math.floor(Number(e.target.value));
+        updateCalculator();
+      });
+      $('calc-presets').addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-preset]');
+        if (!btn) return;
+        calc.units = Number(btn.dataset.preset);
+        $('calc-units').value = calc.units;
+        updateCalculator();
+      });
+
+      // ── Token unlocks section ───────────────────────────────────────────
+      function filteredUnlocks() {
+        return starredOnly ? unlockData.filter((u) => starred.has(u.id)) : unlockData;
+      }
+
+      function renderUnlocks() {
+        if (!unlockData) return;
+        const unlocks = filteredUnlocks();
+        if (starredOnly && unlocks.length === 0) {
+          show(unlockStates, 'empty');
+          return;
+        }
+        show(unlockStates, 'list');
+        $('unlocks-list').replaceChildren(...unlocks.map((u) => {
+          const row = document.createElement('li');
+          row.className = 'list-row flex-col items-stretch gap-2';
+
+          const top = document.createElement('div');
+          top.className = 'flex items-center gap-1';
+          top.append(starButton(u.id, u.token));
+          const name = document.createElement('p');
+          name.className = 'min-w-0 flex-1 text-body font-medium';
+          name.textContent = u.token + ' ';
+          const fullName = document.createElement('span');
+          fullName.className = 'font-normal text-muted';
+          fullName.textContent = u.name;
+          name.append(fullName);
+          top.append(name, statusPill(u.risk));
+
+          const meta = document.createElement('div');
+          meta.className = 'flex items-center justify-between gap-3 text-small text-muted';
+          const countdown = document.createElement('span');
+          countdown.dataset.deadline = String(new Date(u.unlocksAt).getTime());
+          const label = document.createElement('span');
+          label.textContent = 'Unlocks in ';
+          const timer = document.createElement('span');
+          timer.className = 'tabular-nums text-fg';
+          countdown.append(label, timer);
+          const size = document.createElement('span');
+          size.className = 'tabular-nums';
+          size.textContent = fmtAmount(u.amount) + ' ' + u.token;
+          meta.append(countdown, size);
+
+          // Circulating vs locked supply.
+          const supplyPct = Math.round((u.circulating / (u.circulating + u.locked)) * 100);
+          const bar = meter(supplyPct, 'low');
+          const labels = document.createElement('div');
+          labels.className = 'flex items-center justify-between text-small text-muted';
+          const circ = document.createElement('span');
+          circ.textContent = 'Circulating ' + supplyPct + '%';
+          const locked = document.createElement('span');
+          locked.textContent = 'Locked ' + (100 - supplyPct) + '%';
+          labels.append(circ, locked);
+
+          row.append(top, meta, bar, labels);
+          return row;
+        }));
+        tickCountdowns();
+      }
+
+      // Countdown timers, ticked once a second. Past zero the line reads
+      // "Unlocked", never a negative countdown.
+      function tickCountdowns() {
+        const now = Date.now();
+        for (const countdown of document.querySelectorAll('[data-deadline]')) {
+          const [label, timer] = countdown.children;
+          const left = Number(countdown.dataset.deadline) - now;
+          if (left <= 0) {
+            label.textContent = 'Unlocked';
+            timer.textContent = '';
+          } else {
+            label.textContent = 'Unlocks in ';
+            timer.textContent = fmtCountdown(left);
+          }
+        }
+      }
+      setInterval(tickCountdowns, 1000);
+
+      // ── Loading and the starred-only switch ─────────────────────────────
+      async function fetchJson(url) {
+        const res = await fetch(url, { headers });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      }
+
+      async function loadGas(showLoading) {
+        if (showLoading) show(gasStates, 'loading');
+        try {
+          gasData = (await fetchJson('/api/gas')).chains;
+        } catch {
+          if (!gasData) show(gasStates, 'error');
+          return; // a failed refresh keeps the last good numbers on screen
+        }
+        renderGas();
+      }
+
+      async function loadUnlocks(showLoading) {
+        if (showLoading) show(unlockStates, 'loading');
+        try {
+          unlockData = (await fetchJson('/api/unlocks')).unlocks;
+        } catch {
+          if (!unlockData) show(unlockStates, 'error');
+          return;
+        }
+        renderUnlocks();
+      }
+
+      $('gas-retry').addEventListener('click', () => loadGas(true));
+      $('unlocks-retry').addEventListener('click', () => loadUnlocks(true));
+
+      const switchEl = $('starred-only');
+      switchEl.checked = starredOnly;
+      switchEl.addEventListener('change', () => {
+        starredOnly = switchEl.checked;
+        saveFavorites();
+        renderGas();
+        renderUnlocks();
+      });
+
+      // Gas refreshes every 30 s; unlocks are loaded once (their countdowns
+      // tick client-side from the absolute unlock time).
+      loadGas(true);
+      loadUnlocks(true);
+      setInterval(() => loadGas(false), 30000);
+    })();
   </script>
 </body>
 </html>

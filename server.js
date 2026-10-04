@@ -1,11 +1,9 @@
 const express = require('express');
 const path = require('path');
-const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
 
 const app = express();
 const port = process.env.PORT || 3000;
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
 // The platform signs user-identity tokens with an RSA private key it never
 // shares. Containers get only the PUBLIC half, so this app can verify who a
@@ -109,33 +107,136 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 // fresh load.
 app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
-// Button press
-app.post('/api/press', async (req, res) => {
-  try {
-    await pool.query(`
-      INSERT INTO presses (user_id, username) VALUES ($1, $2)
-    `, [req.user.id, req.user.username]);
-    res.json({ ok: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// ── Mock market data ─────────────────────────────────────────────────────
+// Everything the dashboard shows is simulated. Values come from a
+// deterministic pseudo-random seed tied to the clock, so they drift over
+// time like a live feed, yet every client loading in the same interval
+// sees the same numbers (no flicker between a load and its 30-second
+// refresh). No external API, no credentials, no database.
+//
+// `pg` stays in package.json for the day real chain data lands; nothing
+// here touches Postgres yet.
 
-// Leaderboard
-app.get('/api/leaderboard', async (_req, res) => {
-  try {
-    const { rows } = await pool.query(`
-      SELECT username, COUNT(*) as presses
-      FROM presses
-      GROUP BY username
-      ORDER BY presses DESC
-      LIMIT 50
-    `);
-    res.json({ leaderboard: rows });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+const CHAINS = [
+  { id: 'ethereum', name: 'Ethereum', symbol: 'ETH', unit: 'gwei', baseFee: 20, spread: 0.9, nativeUsd: 3210, flat: false, thresholds: { low: 15, high: 40 } },
+  { id: 'solana', name: 'Solana', symbol: 'SOL', unit: 'SOL', baseFee: 0.000005, spread: 0.9, nativeUsd: 152, flat: true, thresholds: { low: 0.000004, high: 0.00001 } },
+  { id: 'arbitrum', name: 'Arbitrum', symbol: 'ARB', unit: 'gwei', baseFee: 0.1, spread: 0.9, nativeUsd: 3210, flat: false, thresholds: { low: 0.07, high: 0.2 } },
+  { id: 'base', name: 'Base', symbol: 'ETH', unit: 'gwei', baseFee: 0.05, spread: 0.9, nativeUsd: 3210, flat: false, thresholds: { low: 0.04, high: 0.12 } },
+];
+
+// Standard gas units for a basic transfer, the basis of transferUsd and of
+// the client's cost calculator. Solana charges a flat per-transaction fee
+// instead and ignores it.
+const TRANSFER_GAS = 21000;
+
+// Upcoming unlocks, anchored to the current UTC day so the schedule stays
+// put within a day: roughly 6 hours, 2, 4, 5, 9 and 14 days out.
+const UNLOCK_TOKENS = [
+  { id: 'arb', token: 'ARB', name: 'Arbitrum', hours: 6, amount: 92650000, circulating: 4280000000, locked: 5720000000 },
+  { id: 'op', token: 'OP', name: 'Optimism', hours: 51, amount: 8500000, circulating: 1310000000, locked: 3790000000 },
+  { id: 'apt', token: 'APT', name: 'Aptos', hours: 99, amount: 68300000, circulating: 1160000000, locked: 940000000 },
+  { id: 'strk', token: 'STRK', name: 'Starknet', hours: 121, amount: 41000000, circulating: 2690000000, locked: 2410000000 },
+  { id: 'wld', token: 'WLD', name: 'Worldcoin', hours: 220, amount: 5200000, circulating: 1350000000, locked: 3650000000 },
+  { id: 'dydx', token: 'DYDX', name: 'dYdX', hours: 341, amount: 33000000, circulating: 1100000000, locked: 900000000 },
+];
+
+function hashSeed(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 2147483647;
+  return h;
+}
+
+// Deterministic 0..1 from an integer seed (integer-mixing PRNG — a plain
+// `Math.sin(seed)` hash clusters badly at these seed sizes).
+function rand(seed) {
+  let t = (seed + 0x6d2b79f5) | 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+function feeStatus(price, thresholds) {
+  if (price < thresholds.low) return 'low';
+  if (price > thresholds.high) return 'high';
+  return 'medium';
+}
+
+// The current fee: the chain's base fee wobbling on a log scale by ±spread
+// (spread 0.9 is roughly ×0.4..×2.5), seeded by the 5-minute bucket so it
+// drifts between refreshes, not mid-page. Wide enough to cross the Low and
+// High thresholds, so the status actually varies like a live feed.
+function currentFee(chain) {
+  const bucket = Math.floor(Date.now() / 300000);
+  const wobble = Math.exp(chain.spread * (rand(hashSeed(chain.id) + bucket) - 0.5) * 2);
+  return chain.baseFee * wobble;
+}
+
+function transferUsd(chain, price, gasUnits) {
+  const cost = chain.flat ? price : (price * gasUnits) / 1e9;
+  return cost * chain.nativeUsd;
+}
+
+function gasPayload() {
+  const dayMs = 86400000;
+  return {
+    chains: CHAINS.map((chain) => {
+      const price = currentFee(chain);
+      const history = [];
+      for (let i = 6; i >= 0; i--) {
+        const day = new Date(Date.now() - i * dayMs);
+        const key = day.toISOString().slice(0, 10);
+        // Each day's lowest fee, seeded by chain + calendar day so the past
+        // week stays put within a day. Values span the chain's Low and
+        // Medium bands; the status follows the same thresholds as now.
+        const t = chain.thresholds;
+        const value = t.low * 0.4 + (t.high - t.low * 0.4) * rand(hashSeed(chain.id + ':' + key));
+        history.push({ date: key, low: value, status: feeStatus(value, t) });
+      }
+      return {
+        id: chain.id,
+        name: chain.name,
+        symbol: chain.symbol,
+        unit: chain.unit,
+        price,
+        status: feeStatus(price, chain.thresholds),
+        nativeUsd: chain.nativeUsd,
+        transferUsd: transferUsd(chain, price, TRANSFER_GAS),
+        thresholds: chain.thresholds,
+        history,
+      };
+    }),
+  };
+}
+
+// Risk is the unlock's size relative to circulating supply: over 5% is
+// high, 1–5% medium, under 1% low.
+function unlockRisk(amount, circulating) {
+  const share = amount / circulating;
+  if (share > 0.05) return 'high';
+  if (share >= 0.01) return 'medium';
+  return 'low';
+}
+
+function unlocksPayload() {
+  const now = new Date();
+  const dayStart = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return {
+    unlocks: UNLOCK_TOKENS.map((t) => ({
+      id: t.id,
+      token: t.token,
+      name: t.name,
+      unlocksAt: new Date(dayStart + t.hours * 3600000).toISOString(),
+      amount: t.amount,
+      circulating: t.circulating,
+      locked: t.locked,
+      risk: unlockRisk(t.amount, t.circulating),
+    })),
+  };
+}
+
+// Gas fees and token unlocks. The dashboard refetches /api/gas every 30 s.
+app.get('/api/gas', (_req, res) => res.json(gasPayload()));
+app.get('/api/unlocks', (_req, res) => res.json(unlocksPayload()));
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -175,14 +276,6 @@ app.get('*', (req, res) => {
 });
 
 async function start() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS presses (
-      id SERIAL PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      username VARCHAR(255) NOT NULL,
-      created_at TIMESTAMPTZ DEFAULT NOW()
-    )
-  `);
   const server = app.listen(port, () => console.log(`Listening on :${port}`));
   // Let Envoy retire idle upstream connections at 60s, with a 15s margin.
   server.keepAliveTimeout = 75_000;

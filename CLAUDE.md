@@ -60,6 +60,11 @@ the platform fixes the base commit, and none of this applies.
 
 ## Starter template
 
+**Done:** the template screen has been replaced by the real dashboard
+(the first change removed the starter notice, the demo endpoints and the
+`presses` table, and rewrote the README). The notes below are kept for
+reference in case template content ever reappears.
+
 The screen this app currently ships — the hero, the "What's already
 working" card, and the Press! example (the demo markup in
 `public/index.html`, the `/api/press` and `/api/leaderboard` routes, and
@@ -102,22 +107,26 @@ tables you've marked private), etc.
 
 Monitor real-time gas fees and token unlock risks across multiple blockchains
 
-_(add a sentence or two more of product context here so Claude Code has a
-shared understanding of what this app is for)_
+The dashboard helps someone decide *when* to send a transaction: it shows
+where fees are cheap right now (per-chain gas meters plus a weekly low-fee
+heatmap), what a transaction will cost in USD, and when the next token
+unlocks land so they can judge the sell-side risk. All numbers come from
+deterministic mock endpoints (`/api/gas`, `/api/unlocks`) that simulate a
+live feed — no external chain APIs, no database; real feeds can replace the
+payload functions in `server.js` later without touching the UI.
 
 ## Design
 
 This app's look. The first real version fills in the blanks; every later
 change follows it, and updates it when a request changes the look on purpose.
 
-- **Palette:** _(name the accent, any second colour and the neutrals, e.g.
-  "accent: tomato red; second: basil green; neutrals: warm greys")_
-- **Signature element:** _(the one thing on screen drawn from this app's
-  subject, which no other app would have)_
+- **Palette:** the kit's teal accent; second colour is the amber `--warn`
+  token (the Medium status; Low = accent, Medium = warn, High = danger);
+  neutrals are the kit's warm greys
+- **Signature element:** the glass gas-meter cards — translucent blurred
+  surfaces (`.glass-card`) carrying each chain's Low/Medium/High meter
 - **Type scale:** `text-title`, `text-heading`, `text-body`, `text-small`
   _(change their sizes in `tailwind.config.js` if you must, not their number)_
-- **One fixed look:** _(only for an app drawn as its own scene, such as a
-  game: which look, and why. Otherwise delete this line.)_
 
 The kit is in `styles/tailwind-input.css`: colour tokens with a light and
 a dark value (named in `tailwind.config.js`), and a few components
@@ -142,3 +151,12 @@ Re-theme by changing the token values there, keeping every text pair at
 _(optional — e.g. "all currency values stored as integer cents, not
 floats"; "the `posts` table is append-only"; "avoid adding new
 dependencies"; etc.)_
+
+- Favorites (starred chain/token ids) and the Starred only switch live in
+  the browser's localStorage (`gaslock:starred`, `gaslock:starredOnly`) —
+  by design there is no table and no server-side state for them.
+- Nothing touches Postgres yet; `pg` stays in package.json for when real
+  chain data lands. Mock data is generated in code, not seeded.
+- Status thresholds (fee bands per chain, unlock risk bands) are defined in
+  one place each: `CHAINS`/`unlockRisk` in `server.js`, mirrored only as
+  display colors in the frontend.

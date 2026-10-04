@@ -1,4 +1,15 @@
 {
   "description": "Monitor real-time gas fees and token unlock risks across multiple blockchains",
-  "secrets": []
+  "secrets": [],
+  "tests": [
+    {
+      "id": "dashboard.default",
+      "name": "Dashboard renders",
+      "path": "/",
+      "expectSelector": ".glass-card",
+      "expectText": "Token unlocks",
+      "visual": true,
+      "impact": ["public/index.html", "server.js", "styles/tailwind-input.css", "tailwind.config.js"]
+    }
+  ]
 }
