@@ -100,45 +100,60 @@ tables you've marked private), etc.
 
 ## About Gas & Lock
 
-Monitor real-time gas fees and token unlock risks across multiple blockchains
-
-_(add a sentence or two more of product context here so Claude Code has a
-shared understanding of what this app is for)_
+Monitor real-time gas fees and token unlock risks across multiple
+blockchains. Traders use it to time transactions (fee meter + weekly
+heatmap + cost calculator) and to brace for sell pressure (unlock calendar
+with countdowns and risk ratings). The whole app is deliberately
+client-side on **simulated demo data** — no live market feeds and no
+backend writes — so every control can be exercised instantly.
 
 ## Design
 
-This app's look. The first real version fills in the blanks; every later
-change follows it, and updates it when a request changes the look on purpose.
+This app's look. Every later change follows it, and updates it when a
+request changes the look on purpose.
 
-- **Palette:** _(name the accent, any second colour and the neutrals, e.g.
-  "accent: tomato red; second: basil green; neutrals: warm greys")_
-- **Signature element:** _(the one thing on screen drawn from this app's
-  subject, which no other app would have)_
+- **Palette:** deep-navy neutrals on a near-black ground (`--ground` 9 12
+  22, `--surface` 16 22 36, blue-tinted greys for text and lines); accent:
+  neon green (`--accent` 47 226 152); second highlight: cyan (`--cyan` 66
+  216 240) for live values and the focus ring; status trio green/amber/red
+  (`--pos`, `--warn`, `--risk`) for fee levels and market pressure. Status
+  color never travels alone: every pill carries its word (Low / Medium /
+  High).
+- **Signature element:** glassmorphism cards (`glass`: translucent navy +
+  blur) floating over faint neon glow fields, plus the weekly 7×24 fee
+  heatmap — no other app shows the week's cheap hours as a grid.
 - **Type scale:** `text-title`, `text-heading`, `text-body`, `text-small`
-  _(change their sizes in `tailwind.config.js` if you must, not their number)_
-- **One fixed look:** _(only for an app drawn as its own scene, such as a
-  game: which look, and why. Otherwise delete this line.)_
+  (unchanged defaults in `tailwind.config.js`).
+- **One fixed look:** dark. This is a Web3 glassmorphism scene, and the
+  request pinned dark mode, so `:root` and `.dark` carry identical token
+  values and the app ignores the viewer's Homeroom theme on purpose.
 
-The kit is in `styles/tailwind-input.css`: colour tokens with a light and
-a dark value (named in `tailwind.config.js`), and a few components
-(`btn-primary`, `btn-secondary`, `field`, `list` and `list-row`,
-`card`, `section-label`, `skeleton`, `state-empty`, `state-error`).
-Re-theme by changing the token values there, keeping every text pair at
-4.5:1 or more in both looks.
+The kit is in `styles/tailwind-input.css`: colour tokens (both looks set to
+the same dark values, see above) and components (`glass`, `chip`,
+`switch`, `star-btn`, `pill`, `meter`, `hm-cell`, `btn-primary`,
+`btn-secondary`, `field`, `section-label`, `skeleton`, `state-empty`,
+`state-error`). Re-theme by changing the token values there.
 
 - Colour comes only from the tokens (`bg-ground`, `bg-surface`,
   `text-fg`, `text-muted`, `border-line`, `bg-accent` with
   `text-on-accent`, ...): never a raw hex value or a stock palette class.
 - Tap targets are at least 44 px; the buttons and fields already are.
-- Every screen that loads data has honest loading, empty and error states.
-  Never show the empty state while loading or after a failure; an error says
-  what failed, what still works, and offers Retry.
-- Seed obviously fake staging demo data so the populated screen can be seen
-  ("Staging mock data" in the platform conventions).
-- No cards in cards, no uppercase eyebrows, no emoji as icons.
+- Every list has honest empty states that say why it is empty and how to
+  fill it (star something, clear the search/filter).
+- No cards in cards, no uppercase eyebrows, no emoji as icons (the Ξ and ◎
+  currency glyphs on chain cards are text monograms, not emoji).
 
 ## App-specific conventions
 
-_(optional — e.g. "all currency values stored as integer cents, not
-floats"; "the `posts` table is append-only"; "avoid adding new
-dependencies"; etc.)_
+- **All data is simulated and client-side.** `public/app.js` holds the mock
+  chains, unlock schedules and fee walk; there are no `/api` data routes
+  and no DB reads. Don't add a "fetch live prices" path without a
+  deliberate decision — the demo-data framing is stated in the header badge
+  and the footer.
+- Unlocks are dated as offsets from page load (`days` fields), so countdowns
+  and the "Next 7 days" filter always have live content.
+- Favorites live in `localStorage` under `gaslock:favs.v1` (array of ids
+  like `chain:ethereum`, `token:ARB`) and the toggle under
+  `gaslock:favonly.v1`. Keep the `.v1` suffix if the shape ever changes.
+- The `presses` table from the starter template is gone; no schema is
+  created on boot, so staging needs no seed data.

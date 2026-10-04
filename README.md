@@ -1,28 +1,36 @@
 # Gas & Lock
 
-> **Starter template** — this repo was scaffolded by Homeroom Social
-> Vibecoding. Everything in it is placeholder example code until the
-> app's first real feature is built.
+A single-page dashboard for crypto traders and DeFi users: watch gas fees
+across chains, find the cheapest hours to transact, price a transaction
+before sending it, and see which token unlocks are about to hit the market.
 
-The scaffold is a small working demo that proves the plumbing works:
+Everything runs client-side on **simulated demo data** — no live market
+feeds, no backend writes. It is built to be fully interactive so every
+button, filter, calculator and bookmark can be exercised immediately.
 
-- **Sign-in** — the server verifies the platform-issued user token
-  (an RS256 JWT) on every request, so the app already knows who is
-  using it. No accounts to build.
-- **Database** — the app has its own private Postgres database; the
-  demo stores button presses in a `presses` table.
-- **Live API** — two example routes (`/api/press`,
-  `/api/leaderboard`) read and write through a real Express server.
-- **Styling** — Tailwind CSS, precompiled by `npm run build` during
-  image creation with either Kubernetes/Paketo or standalone Docker, in a
-  light and a dark look that follow the viewer's Homeroom theme.
+## What's in it
 
-## Replacing the template
+- **Header** — app title, a live status badge (marked "simulated"), and a
+  global **Favorites only** switch that filters both sections.
+- **Gas tracker** — live fee cards for Ethereum, Solana, Arbitrum and Base
+  with green/amber/red level indicators; a weekly 7×24 fee heatmap per
+  chain with a best-window hint; a cost calculator (token swap, NFT mint,
+  cross-chain bridge) with chain, action and complexity inputs.
+- **Lock tracker** — upcoming token unlocks (OP, ARB, SOL, APT, TIA,
+  AVAX, STRK, SUI) with live countdowns, circulating-vs-locked supply
+  bars, USD value at risk, a market-pressure rating, plus search and
+  quick filters (All, Favorites, High risk, Next 7 days).
+- **Favorites** — star any chain or token; stored in `localStorage`
+  (`gaslock:favs.v1`, toggle in `gaslock:favonly.v1`) so preferences
+  survive refreshes.
 
-Open the app on Homeroom, tap the Homeroom icon in the header, choose
-**Start a new change**, and describe the app you want in plain English.
-The template will be replaced with your real app. You can also run
-Claude Code against this repo directly; start with `CLAUDE.md`, which
-carries the app-specific notes and points at the platform rules.
+## Run it
 
-Once the real app exists, rewrite this README to describe it.
+```sh
+npm ci --include=dev
+npm run build   # compiles styles/tailwind-input.css to public/tailwind.css
+npm start
+```
+
+The design kit lives in `styles/tailwind-input.css` (colour tokens +
+components); `CLAUDE.md` documents the app's look and conventions.
