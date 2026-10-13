@@ -1,4 +1,8 @@
 {
+  "icon": {
+    "image": "brand/icon.png",
+    "emoji": "⛽"
+  },
   "description": "Monitor real-time gas fees and token unlock risks across multiple blockchains",
   "secrets": [],
   "tests": [
