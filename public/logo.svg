@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" role="img" aria-labelledby="logo-title">
+  <title id="logo-title">Gas &amp; Lock</title>
+  <!-- Padlock with a gas-flame keyhole. Colours are the app's design tokens:
+       --accent #2FE298 (lock body) and --cyan #42D8F0 (shackle). -->
+  <path d="M15 27v-5.5a9 9 0 0 1 18 0V27" fill="none" stroke="#42D8F0" stroke-width="4" stroke-linecap="round"/>
+  <path fill="#2FE298" fill-rule="evenodd" d="M8 26h32a6 6 0 0 1 6 6v8a6 6 0 0 1-6 6H8a6 6 0 0 1-6-6v-8a6 6 0 0 1 6-6Zm16.6 1.2c1.6 3.8 4.8 6.2 4.8 10.4 0 3.4-2.4 5.6-5.3 5.6s-5.4-2.2-5.4-5.5c0-2.1 1.2-3.7 2.5-4.9-.3 1.2.1 2.2.8 2.8-.3-3 .7-5.6 2.6-8.4Z"/>
+</svg>

@@ -13,7 +13,17 @@
       "expectText": "Favorites only",
       "expectSelector": "#gas-grid",
       "visual": true,
-      "impact": ["public/index.html", "public/app.js", "styles/tailwind-input.css", "tailwind.config.js"]
+      "impact": ["public/index.html", "public/app.js", "public/logo.svg", "public/icon.svg", "public/icon-192.png", "public/icon-512.png", "public/apple-touch-icon.png", "public/site.webmanifest", "styles/tailwind-input.css", "tailwind.config.js"]
+    },
+    {
+      "name": "Header shows the Gas & Lock logo",
+      "path": "/",
+      "expectSelector": "[data-app-logo]"
+    },
+    {
+      "name": "App icon and web manifest are declared",
+      "path": "/",
+      "expectSelector": "link[rel=\"manifest\"]"
     },
     {
       "name": "Gas tracker shows all four chains",

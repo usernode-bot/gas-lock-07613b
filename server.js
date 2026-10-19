@@ -102,11 +102,11 @@ app.use((req, res, next) => {
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
-// The template ships no favicon file; index.html carries an inline SVG
-// icon instead. Answer 204 here so anything that still probes
-// /favicon.ico (older browsers, direct visits) doesn't fall through to
-// the auth-gated catch-all and surface a 401 in the console on every
-// fresh load.
+// The app's icon is declared in index.html's <link rel="icon"> tags
+// (/icon.svg plus the PNG sizes and the web manifest), not at this legacy
+// path. Answer 204 here so anything that still probes /favicon.ico (older
+// browsers, direct visits) doesn't fall through to the auth-gated
+// catch-all and surface a 401 in the console on every fresh load.
 app.get('/favicon.ico', (_req, res) => res.status(204).end());
 
 app.use(express.static(path.join(__dirname, 'public')));

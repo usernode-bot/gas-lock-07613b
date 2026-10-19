@@ -122,6 +122,12 @@ request changes the look on purpose.
 - **Signature element:** glassmorphism cards (`glass`: translucent navy +
   blur) floating over faint neon glow fields, plus the weekly 7×24 fee
   heatmap — no other app shows the week's cheap hours as a grid.
+- **Logo:** a padlock with a gas-flame keyhole — cyan shackle, neon-green
+  body, flame cut out so the surface shows through. `public/logo.svg` is the
+  mark on its own; `public/icon.svg` (rendered to the PNG sizes and
+  `site.webmanifest`) is it on the navy ground; the header draws it inline at
+  24 px inside the 44 px tile (`data-app-logo`). Keep the two shapes and the
+  accent/cyan pairing when the mark appears somewhere new.
 - **Type scale:** `text-title`, `text-heading`, `text-body`, `text-small`
   (unchanged defaults in `tailwind.config.js`).
 - **One fixed look:** dark. This is a Web3 glassmorphism scene, and the
