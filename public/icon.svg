@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="icon-title">
+  <title id="icon-title">Gas &amp; Lock</title>
+  <defs>
+    <!-- The app's glassmorphism scene, shrunk to an icon: navy ground with
+         faint cyan and neon-green glows (same tokens as the page). -->
+    <radialGradient id="glow-cyan" cx="0.85" cy="0" r="0.75">
+      <stop offset="0" stop-color="#42D8F0" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#42D8F0" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-green" cx="0.1" cy="0.25" r="0.75">
+      <stop offset="0" stop-color="#2FE298" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#2FE298" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="512" height="512" fill="#090C16"/>
+  <rect width="512" height="512" fill="url(#glow-cyan)"/>
+  <rect width="512" height="512" fill="url(#glow-green)"/>
+  <g transform="translate(256 256) scale(7.2) translate(-24 -29.25)">
+    <path d="M15 27v-5.5a9 9 0 0 1 18 0V27" fill="none" stroke="#42D8F0" stroke-width="4" stroke-linecap="round"/>
+    <path fill="#2FE298" fill-rule="evenodd" d="M8 26h32a6 6 0 0 1 6 6v8a6 6 0 0 1-6 6H8a6 6 0 0 1-6-6v-8a6 6 0 0 1 6-6Zm16.6 1.2c1.6 3.8 4.8 6.2 4.8 10.4 0 3.4-2.4 5.6-5.3 5.6s-5.4-2.2-5.4-5.5c0-2.1 1.2-3.7 2.5-4.9-.3 1.2.1 2.2.8 2.8-.3-3 .7-5.6 2.6-8.4Z"/>
+  </g>
+</svg>
